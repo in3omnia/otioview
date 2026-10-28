@@ -8,6 +8,7 @@ except ImportError:
 import collections
 import math
 from . import track_widgets
+from .settings import COLORS
 
 RULER_SIZE = 10
 
@@ -48,10 +49,10 @@ class FrameNumber(QtWidgets.QGraphicsRectItem):
                 )
             else:
                 self.frameNumber.setBrush(
-                    QtGui.QBrush(QtGui.QColor(25, 255, 10, 255))
+                    QtGui.QBrush(QtGui.QColor(*COLORS['frame_number.text']))
                 )
                 self.setBrush(
-                    QtGui.QBrush(QtGui.QColor(5, 55, 0, 120))
+                    QtGui.QBrush(QtGui.QColor(*COLORS['frame_number.background']))
                 )
             if self.position < 0:
                 self.setX(-rect.width() - 2)
@@ -84,7 +85,7 @@ class Ruler(QtWidgets.QGraphicsPolygonItem):
         # to retrieve tracks and its children
         self.composition = composition
         self.setBrush(
-            QtGui.QBrush(QtGui.QColor(50, 255, 20, 255))
+            QtGui.QBrush(QtGui.QColor(*COLORS['ruler.fill']))
         )
 
         self.setAcceptHoverEvents(True)
@@ -286,7 +287,7 @@ class Ruler(QtWidgets.QGraphicsPolygonItem):
     def itemChange(self, change, value):
         if change == QtWidgets.QGraphicsItem.ItemSelectedHasChanged:
             self.setPen(
-                QtGui.QColor(0, 255, 0, 255) if self.isSelected()
+                QtGui.QColor(*COLORS['ruler.selected']) if self.isSelected()
                 else QtGui.QColor(0, 0, 0, 255)
             )
         return super().itemChange(change, value)

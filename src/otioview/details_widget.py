@@ -7,6 +7,7 @@ except ImportError:
     from PySide2 import QtWidgets, QtGui, QtCore
 
 import opentimelineio as otio
+from .settings import COLORS
 
 
 class Details(QtWidgets.QTextEdit):
@@ -20,7 +21,7 @@ class Details(QtWidgets.QTextEdit):
         self.font.setPointSize(12)
         self.setFont(self.font)
 
-        self.backgroundColor = QtGui.QColor(33, 33, 33)
+        self.backgroundColor = QtGui.QColor(*COLORS['details.background'])
         self.textColor = QtGui.QColor(180, 180, 180)
         self.highlightColor = QtGui.QColor(255, 198, 109)
         self.keywordColor = QtGui.QColor(204, 120, 50)

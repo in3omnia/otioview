@@ -9,6 +9,7 @@ except ImportError:
     from PySide2.QtGui import QFontMetrics
 
 import opentimelineio as otio
+from .settings import COLORS
 
 TIME_SLIDER_HEIGHT = 20
 MEDIA_TYPE_SEPARATOR_HEIGHT = 5
@@ -23,17 +24,17 @@ TRACK_NAME_WIDGET_WIDTH = 100.0
 SHORT_NAME_LENGTH = 7
 CURRENT_ZOOM_LEVEL = 1.0
 MARKER_COLORS = {
-    otio.schema.MarkerColor.RED: (0xff, 0x00, 0x00, 0xff),
-    otio.schema.MarkerColor.PINK: (0xff, 0x70, 0x70, 0xff),
-    otio.schema.MarkerColor.ORANGE: (0xff, 0xa0, 0x00, 0xff),
-    otio.schema.MarkerColor.YELLOW: (0xff, 0xff, 0x00, 0xff),
-    otio.schema.MarkerColor.GREEN: (0x00, 0xff, 0x00, 0xff),
-    otio.schema.MarkerColor.CYAN: (0x00, 0xff, 0xff, 0xff),
-    otio.schema.MarkerColor.BLUE: (0x00, 0x00, 0xff, 0xff),
-    otio.schema.MarkerColor.PURPLE: (0xa0, 0x00, 0xd0, 0xff),
-    otio.schema.MarkerColor.MAGENTA: (0xff, 0x00, 0xff, 0xff),
-    otio.schema.MarkerColor.WHITE: (0xff, 0xff, 0xff, 0xff),
-    otio.schema.MarkerColor.BLACK: (0x00, 0x00, 0x00, 0xff)
+    otio.schema.MarkerColor.RED: COLORS['marker.red'],
+    otio.schema.MarkerColor.PINK: COLORS['marker.pink'],
+    otio.schema.MarkerColor.ORANGE: COLORS['marker.orange'],
+    otio.schema.MarkerColor.YELLOW: COLORS['marker.yellow'],
+    otio.schema.MarkerColor.GREEN: COLORS['marker.green'],
+    otio.schema.MarkerColor.CYAN: COLORS['marker.cyan'],
+    otio.schema.MarkerColor.BLUE: COLORS['marker.blue'],
+    otio.schema.MarkerColor.PURPLE: COLORS['marker.purple'],
+    otio.schema.MarkerColor.MAGENTA: COLORS['marker.magenta'],
+    otio.schema.MarkerColor.WHITE: COLORS['marker.white'],
+    otio.schema.MarkerColor.BLACK: COLORS['marker.black']
 }
 
 
@@ -50,7 +51,7 @@ class BaseItem(QtWidgets.QGraphicsRectItem):
 
         self.setFlags(QtWidgets.QGraphicsItem.ItemIsSelectable)
         self.setBrush(
-            QtGui.QBrush(QtGui.QColor(180, 180, 180, 255))
+            QtGui.QBrush(QtGui.QColor(*COLORS['item.background']))
         )
 
         pen = QtGui.QPen()
@@ -79,7 +80,7 @@ class BaseItem(QtWidgets.QGraphicsRectItem):
         if change == QtWidgets.QGraphicsItem.ItemSelectedHasChanged:
             pen = self.pen()
             pen.setColor(
-                QtGui.QColor(0, 255, 0, 255) if self.isSelected()
+                QtGui.QColor(*COLORS['item.selected']) if self.isSelected()
                 else QtGui.QColor(0, 0, 0, 255)
             )
             pen.setWidth(HIGHLIGHT_WIDTH if self.isSelected() else 0)
@@ -181,6 +182,7 @@ class BaseItem(QtWidgets.QGraphicsRectItem):
     def _set_labels(self):
         self._set_labels_rational_time()
         self.source_name_label.setText('PLACEHOLDER')
+        self.source_name_label.setBrush(QtGui.QBrush(QtGui.QColor(*COLORS['item.name'])))
         self._position_labels()
 
     def _set_tooltip(self):
@@ -243,6 +245,7 @@ class TrackNameItem(BaseItem):
         if len(self.track_name) > SHORT_NAME_LENGTH:
             self.track_name = self.track_name[:SHORT_NAME_LENGTH] + '...'
         self.source_name_label.setText(self.track_name + f'\n({track.kind})')
+        self.source_name_label.setBrush(QtGui.QBrush(QtGui.QColor(*COLORS['track.name'])))
         self.source_name_label.setY(
             (TRACK_HEIGHT -
              self.source_name_label.boundingRect().height()) / 2.0
@@ -419,8 +422,8 @@ class ClipItem(BaseItem):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.setBrush(QtGui.QBrush(QtGui.QColor(168, 197, 255, 255) if self.item.enabled
-                                   else QtGui.QColor(100, 100, 100, 255)))
+        color = 'clip.audio' if getattr(self.item.parent(), 'kind', None) == otio.schema.TrackKind.Audio else 'clip.video'
+        self.setBrush(QtGui.QBrush(QtGui.QColor(*COLORS[color if self.item.enabled else 'clip.disabled'])))
         self.source_name_label.setText(self.item.name)
 
 
@@ -453,7 +456,7 @@ class Track(QtWidgets.QGraphicsRectItem):
         self.track = track
         self.widget_items = []
         self.track_name_item = None
-        self.setBrush(QtGui.QBrush(QtGui.QColor(43, 52, 59, 255)))
+        self.setBrush(QtGui.QBrush(QtGui.QColor(*COLORS['track.background'])))
         self._populate()
 
     def _populate(self):
@@ -536,7 +539,7 @@ class Marker(QtWidgets.QGraphicsPolygonItem):
     def itemChange(self, change, value):
         if change == QtWidgets.QGraphicsItem.ItemSelectedHasChanged:
             self.setPen(
-                QtGui.QColor(0, 255, 0, 255) if self.isSelected()
+                QtGui.QColor(*COLORS['marker.selected']) if self.isSelected()
                 else QtGui.QColor(0, 0, 0, 255)
             )
         return super().itemChange(change, value)

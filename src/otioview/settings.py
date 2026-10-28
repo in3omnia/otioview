@@ -1,9 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright Contributors to the OpenTimelineIO project
 
+from configparser import ConfigParser
+from pathlib import Path
+
+_theme = ConfigParser(interpolation=None)
+with Path(__file__).with_name('dvr.ini').open(encoding='utf-8') as theme_file:
+    _theme.read_file(theme_file)
+COLORS = {name: tuple(map(int, value.split(','))) for name, value in _theme['colors'].items()}
+
 VIEW_STYLESHEET = """
 QMainWindow {
-    background-color: rgb(27, 27, 27);
+    background-color: rgba(%(window.background)s);
 }
 
 QScrollBar:horizontal {
@@ -13,7 +21,7 @@ QScrollBar:horizontal {
 }
 
 QScrollBar::handle:horizontal {
-    background: rgb(255, 83, 112);
+    background: rgba(%(scrollbar.handle.horizontal)s);
     min-width: 20px;
 }
 
@@ -75,4 +83,4 @@ QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
 QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
     background: none;
 }
-"""
+""" % _theme['colors']
