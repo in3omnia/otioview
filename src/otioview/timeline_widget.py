@@ -108,20 +108,16 @@ class CompositionWidget(QtWidgets.QGraphicsScene):
         self._add_time_slider()
         self._add_markers()
 
-        ### mod by luzi (timecode) ###
-        # self._ruler = self._add_ruler()
         timeline = getattr(self.parent().parent(), 'timeline', None) if self.parent() is not None else None
         self.global_start_time = getattr(timeline, 'global_start_time', None) or otio.opentime.RationalTime(0, self.composition.duration().rate)
         self._timecode = self._add_timecode()
         self._ruler = self._add_ruler()
         self.update_timecode(self._ruler.x())
-        ##############################
 
         self._data_cache = self._cache_tracks()
 
 
 
-    ### mod by luzi
     ### add _add_timecode / _position_timecode / update_timecode
     def _add_timecode(self):
         timecode = QtWidgets.QGraphicsSimpleTextItem("00:00:00:00")
@@ -240,7 +236,6 @@ class CompositionWidget(QtWidgets.QGraphicsScene):
         for item in items_to_scale:
             item.counteract_zoom(zoom_level)
 
-        ### mod by luzi (add _position_timecode)
         self._position_timecode(zoom_level=zoom_level)
         self._adjust_scene_size(zoom_level)
 
@@ -799,7 +794,6 @@ class CompositionView(QtWidgets.QGraphicsView):
             ruler = self.scene().get_ruler()
             start = self.scene().global_start_time
             rate = start.rate if start else self.scene().composition.trimmed_range().duration.rate
-            # rate = self.scene().composition.trimmed_range().duration.rate
             step = track_widgets.TIME_MULTIPLIER / rate
             max_x = max(
                 0,

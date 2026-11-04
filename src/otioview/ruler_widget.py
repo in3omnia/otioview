@@ -9,8 +9,6 @@ import collections
 import math
 from . import track_widgets
 from .settings import COLORS, LAYOUT
-### mod by luzi
-# RULER_SIZE = 10
 RULER_SIZE = LAYOUT.getfloat('ruler.size')
 
 class FrameNumber(QtWidgets.QGraphicsRectItem):
@@ -243,7 +241,6 @@ class Ruler(QtWidgets.QGraphicsPolygonItem):
             frameNumber_head.setText("%s" % f_head, highlight_head)
             frameNumber_tail.setText("%s" % f_tail)
 
-        ### mod by luzi (add update_timecode)
         self.composition.update_timecode(self.x())
 
     def snap(self, direction, scene_width):

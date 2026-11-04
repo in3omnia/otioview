@@ -11,10 +11,6 @@ except ImportError:
 import opentimelineio as otio
 from .settings import COLORS, LAYOUT
 
-### mod by luzi
-# TIME_SLIDER_HEIGHT = 20
-# MEDIA_TYPE_SEPARATOR_HEIGHT = 5
-# TRACK_HEIGHT = 45
 TIME_SLIDER_HEIGHT = LAYOUT.getint('time_slider.height')
 MEDIA_TYPE_SEPARATOR_HEIGHT = 5
 TRACK_HEIGHT = LAYOUT.getint('track.height')
@@ -25,8 +21,6 @@ MARKER_SIZE = 10
 EFFECT_HEIGHT = (1.0 / 3.0) * TRACK_HEIGHT
 HIGHLIGHT_WIDTH = 5
 
-### mod by luzi
-# TRACK_NAME_WIDGET_WIDTH = 100.0
 TRACK_NAME_WIDGET_WIDTH = LAYOUT.getfloat('track_name.width')
 SHORT_NAME_LENGTH = 7
 CURRENT_ZOOM_LEVEL = 1.0
@@ -252,7 +246,6 @@ class TrackNameItem(BaseItem):
     def __init__(self, track, rect, *args, **kwargs):
         super().__init__(None, None, rect, *args, **kwargs)
         self.track = track
-        ### mod by luzi
         if LAYOUT.getboolean('track_name.numbered'):
             track_id = [t for t in track.parent() if t.kind == track.kind].index(track) + 1 if track.parent() is not None else 1
             self.track_name = ["音频", "视频"][track.kind == "Video"] + f" {track_id}"
@@ -262,13 +255,11 @@ class TrackNameItem(BaseItem):
         self.full_track_name = self.track_name
         if len(self.track_name) > SHORT_NAME_LENGTH:
             self.track_name = self.track_name[:SHORT_NAME_LENGTH] + '...'
-        ### mod by luzi
         if LAYOUT.getboolean('track_name.numbered'):
             self.source_name_label.setText(self.track_name)
         else:
             self.source_name_label.setText(self.track_name + f'\n({track.kind})')
         self.source_name_label.setBrush(QtGui.QBrush(QtGui.QColor(*COLORS['track.name'])))
-        ### mod by luzi
         if LAYOUT.getboolean('track_name.top_left'):
             self.source_name_label.setPos(LABEL_MARGIN, LABEL_MARGIN)
         else:
@@ -300,7 +291,6 @@ class TrackNameItem(BaseItem):
                 TRACK_HEIGHT
             )
             self.setRect(track_name_rect)
-            ### mod by luzi
             if LAYOUT.getboolean('track_name.numbered'):
                 self.source_name_label.setText(self.track_name)
             else:
@@ -317,7 +307,6 @@ class TrackNameItem(BaseItem):
                 TRACK_HEIGHT
             )
             self.setRect(track_name_rect)
-            ### mod by luzi
             if LAYOUT.getboolean('track_name.numbered'):
                 self.source_name_label.setText(self.track_name)
             else:
@@ -349,7 +338,6 @@ class TrackNameItem(BaseItem):
         return
 
     def counteract_zoom(self, zoom_level=1.0):
-        ### mod by luzi
         if LAYOUT.getboolean('track_name.top_left'):
             self.source_name_label.setPos(LABEL_MARGIN, LABEL_MARGIN)
         else:
@@ -462,7 +450,6 @@ class ClipItem(BaseItem):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        ### mod by luzi
         ### add self.border_width (to adjust gap between clips)
         self.border_width = LAYOUT.getint('clip.border_width')
         pen = self.pen()
@@ -473,7 +460,6 @@ class ClipItem(BaseItem):
         self.setBrush(QtGui.QBrush(QtGui.QColor(*COLORS[color if self.item.enabled else 'clip.disabled'])))
         self.source_name_label.setText(self.item.name)
 
-    ### mod by luzi
     ### add self.border_width (to adjust gap between clips)
     def itemChange(self, change, value):
         result = super().itemChange(change, value)
