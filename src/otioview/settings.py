@@ -13,6 +13,7 @@ _theme = ConfigParser(interpolation=None)
 with Path(__file__).with_name('dvr.ini').open(encoding='utf-8') as theme_file:
     _theme.read_file(theme_file)
 COLORS = {name: tuple(map(int, value.split(','))) for name, value in _theme['colors'].items()}
+LAYOUT = _theme['layout']
 
 INPUT = {}
 for name, value in _theme['input'].items():

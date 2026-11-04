@@ -8,10 +8,10 @@ except ImportError:
 import collections
 import math
 from . import track_widgets
-from .settings import COLORS
-
-RULER_SIZE = 10
-
+from .settings import COLORS, LAYOUT
+### mod by luzi
+# RULER_SIZE = 10
+RULER_SIZE = LAYOUT.getfloat('ruler.size')
 
 class FrameNumber(QtWidgets.QGraphicsRectItem):
 
@@ -72,14 +72,16 @@ class Ruler(QtWidgets.QGraphicsPolygonItem):
 
     def __init__(self, height, composition, *args, **kwargs):
 
-        poly = QtGui.QPolygonF()
-        poly.append(QtCore.QPointF(0.5 * RULER_SIZE, -0.5 * RULER_SIZE))
-        poly.append(QtCore.QPointF(0.5 * RULER_SIZE, 0.5 * RULER_SIZE))
-        poly.append(QtCore.QPointF(0, RULER_SIZE))
-        poly.append(QtCore.QPointF(0, height))
-        poly.append(QtCore.QPointF(0, RULER_SIZE))
-        poly.append(QtCore.QPointF(-0.5 * RULER_SIZE, 0.5 * RULER_SIZE))
-        poly.append(QtCore.QPointF(-0.5 * RULER_SIZE, -0.5 * RULER_SIZE))
+        poly = QtGui.QPolygonF([
+            QtCore.QPointF(0.5 * RULER_SIZE, LAYOUT.getfloat('ruler.head_top')),
+            QtCore.QPointF(0.5 * RULER_SIZE, LAYOUT.getfloat('ruler.head_bottom')),
+            QtCore.QPointF(LAYOUT.getfloat('ruler.stem_half_width'), LAYOUT.getfloat('ruler.stem_top')),
+            QtCore.QPointF(LAYOUT.getfloat('ruler.stem_half_width'), height),
+            QtCore.QPointF(-LAYOUT.getfloat('ruler.stem_half_width'), height),
+            QtCore.QPointF(-LAYOUT.getfloat('ruler.stem_half_width'), LAYOUT.getfloat('ruler.stem_top')),
+            QtCore.QPointF(-0.5 * RULER_SIZE, LAYOUT.getfloat('ruler.head_bottom')),
+            QtCore.QPointF(-0.5 * RULER_SIZE, LAYOUT.getfloat('ruler.head_top')),
+        ])
         super().__init__(poly, *args, **kwargs)
 
         # to retrieve tracks and its children
@@ -241,6 +243,9 @@ class Ruler(QtWidgets.QGraphicsPolygonItem):
             frameNumber_head.setText("%s" % f_head, highlight_head)
             frameNumber_tail.setText("%s" % f_tail)
 
+        ### mod by luzi (add update_timecode)
+        self.composition.update_timecode(self.x())
+
     def snap(self, direction, scene_width):
         ruler_pos = self.x() + direction
         closest_left = scene_width - ruler_pos
@@ -280,9 +285,12 @@ class Ruler(QtWidgets.QGraphicsPolygonItem):
         self.update_frame()
 
     def paint(self, *args, **kwargs):
-        new_args = [args[0],
-                    QtWidgets.QStyleOptionGraphicsItem()] + list(args[2:])
+        painter = args[0]
+        painter.save()
+        painter.setRenderHint(QtGui.QPainter.Antialiasing, LAYOUT.getboolean('ruler.antialias'))
+        new_args = [painter, QtWidgets.QStyleOptionGraphicsItem()] + list(args[2:])
         super().paint(*new_args, **kwargs)
+        painter.restore()
 
     def itemChange(self, change, value):
         if change == QtWidgets.QGraphicsItem.ItemSelectedHasChanged:

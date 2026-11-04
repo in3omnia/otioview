@@ -9,18 +9,25 @@ except ImportError:
     from PySide2.QtGui import QFontMetrics
 
 import opentimelineio as otio
-from .settings import COLORS
+from .settings import COLORS, LAYOUT
 
-TIME_SLIDER_HEIGHT = 20
+### mod by luzi
+# TIME_SLIDER_HEIGHT = 20
+# MEDIA_TYPE_SEPARATOR_HEIGHT = 5
+# TRACK_HEIGHT = 45
+TIME_SLIDER_HEIGHT = LAYOUT.getint('time_slider.height')
 MEDIA_TYPE_SEPARATOR_HEIGHT = 5
-TRACK_HEIGHT = 45
+TRACK_HEIGHT = LAYOUT.getint('track.height')
 TRANSITION_HEIGHT = 10
 TIME_MULTIPLIER = 25
 LABEL_MARGIN = 5
 MARKER_SIZE = 10
 EFFECT_HEIGHT = (1.0 / 3.0) * TRACK_HEIGHT
 HIGHLIGHT_WIDTH = 5
-TRACK_NAME_WIDGET_WIDTH = 100.0
+
+### mod by luzi
+# TRACK_NAME_WIDGET_WIDTH = 100.0
+TRACK_NAME_WIDGET_WIDTH = LAYOUT.getfloat('track_name.width')
 SHORT_NAME_LENGTH = 7
 CURRENT_ZOOM_LEVEL = 1.0
 MARKER_COLORS = {
@@ -245,16 +252,31 @@ class TrackNameItem(BaseItem):
     def __init__(self, track, rect, *args, **kwargs):
         super().__init__(None, None, rect, *args, **kwargs)
         self.track = track
-        self.track_name = 'Track' if not track.name else track.name
+        ### mod by luzi
+        if LAYOUT.getboolean('track_name.numbered'):
+            track_id = [t for t in track.parent() if t.kind == track.kind].index(track) + 1 if track.parent() is not None else 1
+            self.track_name = ["音频", "视频"][track.kind == "Video"] + f" {track_id}"
+        else:
+            self.track_name = 'Track' if not track.name else track.name
+
         self.full_track_name = self.track_name
         if len(self.track_name) > SHORT_NAME_LENGTH:
             self.track_name = self.track_name[:SHORT_NAME_LENGTH] + '...'
-        self.source_name_label.setText(self.track_name + f'\n({track.kind})')
+        ### mod by luzi
+        if LAYOUT.getboolean('track_name.numbered'):
+            self.source_name_label.setText(self.track_name)
+        else:
+            self.source_name_label.setText(self.track_name + f'\n({track.kind})')
         self.source_name_label.setBrush(QtGui.QBrush(QtGui.QColor(*COLORS['track.name'])))
-        self.source_name_label.setY(
-            (TRACK_HEIGHT -
-             self.source_name_label.boundingRect().height()) / 2.0
-        )
+        ### mod by luzi
+        if LAYOUT.getboolean('track_name.top_left'):
+            self.source_name_label.setPos(LABEL_MARGIN, LABEL_MARGIN)
+        else:
+            self.source_name_label.setY(
+                (TRACK_HEIGHT -
+                 self.source_name_label.boundingRect().height()) / 2.0
+            )
+
         self.setToolTip(f'{len(track)} items')
         self.track_widget = None
         self.name_toggle = False
@@ -278,8 +300,12 @@ class TrackNameItem(BaseItem):
                 TRACK_HEIGHT
             )
             self.setRect(track_name_rect)
-            self.source_name_label.setText(
-                self.track_name + f'\n({self.track.kind})')
+            ### mod by luzi
+            if LAYOUT.getboolean('track_name.numbered'):
+                self.source_name_label.setText(self.track_name)
+            else:
+                self.source_name_label.setText(
+                    self.track_name + f'\n({self.track.kind})')
             for widget in self.track_widget.widget_items:
                 widget.current_x_offset = self.short_width
             self.name_toggle = False
@@ -291,8 +317,12 @@ class TrackNameItem(BaseItem):
                 TRACK_HEIGHT
             )
             self.setRect(track_name_rect)
-            self.source_name_label.setText(
-                self.full_track_name + f'\n({self.track.kind})')
+            ### mod by luzi
+            if LAYOUT.getboolean('track_name.numbered'):
+                self.source_name_label.setText(self.track_name)
+            else:
+                self.source_name_label.setText(
+                    self.full_track_name + f'\n({self.track.kind})')
             for widget in self.track_widget.widget_items:
                 widget.current_x_offset = self.full_width
             self.name_toggle = True
@@ -319,8 +349,13 @@ class TrackNameItem(BaseItem):
         return
 
     def counteract_zoom(self, zoom_level=1.0):
-        name_width = self.source_name_label.boundingRect().width()
-        self.source_name_label.setX(0.5 * (self.boundingRect().width() - name_width))
+        ### mod by luzi
+        if LAYOUT.getboolean('track_name.top_left'):
+            self.source_name_label.setPos(LABEL_MARGIN, LABEL_MARGIN)
+        else:
+            name_width = self.source_name_label.boundingRect().width()
+            self.source_name_label.setX(0.5 * (self.boundingRect().width() - name_width))
+
         self.setTransform(QtGui.QTransform.fromScale(zoom_level, 1.0))
 
 
@@ -427,9 +462,33 @@ class ClipItem(BaseItem):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        ### mod by luzi
+        ### add self.border_width (to adjust gap between clips)
+        self.border_width = LAYOUT.getint('clip.border_width')
+        pen = self.pen()
+        pen.setWidth(self.border_width)
+        self.setPen(pen)
+
         color = 'clip.audio' if getattr(self.item.parent(), 'kind', None) == otio.schema.TrackKind.Audio else 'clip.video'
         self.setBrush(QtGui.QBrush(QtGui.QColor(*COLORS[color if self.item.enabled else 'clip.disabled'])))
         self.source_name_label.setText(self.item.name)
+
+    ### mod by luzi
+    ### add self.border_width (to adjust gap between clips)
+    def itemChange(self, change, value):
+        result = super().itemChange(change, value)
+        if change == QtWidgets.QGraphicsItem.ItemSelectedHasChanged and not value:
+            pen = self.pen()
+            pen.setWidth(self.border_width)
+            self.setPen(pen)
+        return result
+
+    def paint(self, painter, option, widget=None):
+        screen_width = painter.deviceTransform().mapRect(self.rect()).width()
+        if not self.isSelected() and screen_width < self.border_width * 2:
+            painter.fillRect(self.rect(), self.brush())
+        else:
+            super().paint(painter, option, widget)
 
 
 class NestedItem(BaseItem):

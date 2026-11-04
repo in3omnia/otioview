@@ -12,7 +12,7 @@ from . import (
     ruler_widget,
     track_widgets,
 )
-from .settings import INPUT
+from .settings import COLORS, INPUT, LAYOUT
 
 
 KEY_SYM = {
@@ -107,9 +107,55 @@ class CompositionWidget(QtWidgets.QGraphicsScene):
         self._add_tracks()
         self._add_time_slider()
         self._add_markers()
+
+        ### mod by luzi (timecode) ###
+        # self._ruler = self._add_ruler()
+        timeline = getattr(self.parent().parent(), 'timeline', None) if self.parent() is not None else None
+        self.global_start_time = getattr(timeline, 'global_start_time', None) or otio.opentime.RationalTime(0, self.composition.duration().rate)
+        self._timecode = self._add_timecode()
         self._ruler = self._add_ruler()
+        self.update_timecode(self._ruler.x())
+        ##############################
 
         self._data_cache = self._cache_tracks()
+
+
+
+    ### mod by luzi
+    ### add _add_timecode / _position_timecode / update_timecode
+    def _add_timecode(self):
+        timecode = QtWidgets.QGraphicsSimpleTextItem("00:00:00:00")
+        timecode.setBrush(QtGui.QBrush(QtGui.QColor(*COLORS['timecode.text'])))
+        timecode.setZValue(float("inf"))
+        self.addItem(timecode)
+        self._position_timecode(timecode)
+        font = timecode.font()
+        font.setPointSizeF(LAYOUT.getfloat('timecode.font_size'))
+        timecode.setFont(font)
+        return timecode
+    def _position_timecode(self, timecode=None, zoom_level=1.0):
+        timecode = timecode or self._timecode
+        rect = timecode.boundingRect()
+        timecode.setTransform(QtGui.QTransform.fromScale(zoom_level, 1.0))
+        timecode.setPos(
+            (track_widgets.TRACK_NAME_WIDGET_WIDTH - rect.width()) * zoom_level / 2,
+            (track_widgets.TIME_SLIDER_HEIGHT - rect.height()) / 2,
+        )
+    def update_timecode(self, ruler_x):
+        start = self.global_start_time
+        rate = start.rate if start else self.composition.trimmed_range().duration.rate
+        frame_offset = round(max(ruler_x, 0) / track_widgets.TIME_MULTIPLIER * rate)
+        current_time = otio.opentime.RationalTime(frame_offset, rate)
+        if start is not None:
+            current_time += start.rescaled_to(rate)
+        try:
+            self._timecode.setText(otio.opentime.to_timecode(current_time))
+        except ValueError:
+            # Empty timelines and non-SMPTE rates still have a valid time value.
+            self._timecode.setText(otio.opentime.to_time_string(current_time))
+        self._position_timecode(zoom_level=track_widgets.CURRENT_ZOOM_LEVEL)
+
+
 
     def track_name_width(self):
         # Choose track name item from the longest track, since that track will
@@ -194,6 +240,8 @@ class CompositionWidget(QtWidgets.QGraphicsScene):
         for item in items_to_scale:
             item.counteract_zoom(zoom_level)
 
+        ### mod by luzi (add _position_timecode)
+        self._position_timecode(zoom_level=zoom_level)
         self._adjust_scene_size(zoom_level)
 
     def scale_track_height(self, scale_by):
@@ -216,8 +264,9 @@ class CompositionWidget(QtWidgets.QGraphicsScene):
             rect = track.track_name_item.rect()
             rect.setHeight(h)
             track.track_name_item.setRect(rect)
-            label = track.track_name_item.source_name_label
-            label.setY((h - label.boundingRect().height()) / 2.0)
+            if not LAYOUT.getboolean('track_name.top_left'):
+                label = track.track_name_item.source_name_label
+                label.setY((h - label.boundingRect().height()) / 2.0)
 
             for item in track.widget_items:
                 rect = item.rect()
@@ -237,9 +286,9 @@ class CompositionWidget(QtWidgets.QGraphicsScene):
 
         self._adjust_scene_size(track_widgets.CURRENT_ZOOM_LEVEL)
 
-        # Update the bottom of the original 7-point ruler polygon.
+        # Update the bottom of the previously modified 8-point ruler polygon.
         poly = self._ruler.polygon()
-        for i in (3,):
+        for i in (3, 4):
             poly[i] = QtCore.QPointF(poly[i].x(), self.sceneRect().height())
         self._ruler.setPolygon(poly)
 
@@ -748,7 +797,9 @@ class CompositionView(QtWidgets.QGraphicsView):
         if key in INPUT['frame.keys'] and modifier in (
                 INPUT['frame.modifier'], INPUT['second.modifier']):
             ruler = self.scene().get_ruler()
-            rate = self.scene().composition.trimmed_range().duration.rate
+            start = self.scene().global_start_time
+            rate = start.rate if start else self.scene().composition.trimmed_range().duration.rate
+            # rate = self.scene().composition.trimmed_range().duration.rate
             step = track_widgets.TIME_MULTIPLIER / rate
             max_x = max(
                 0,
