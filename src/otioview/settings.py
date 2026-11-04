@@ -4,10 +4,31 @@
 from configparser import ConfigParser
 from pathlib import Path
 
+try:
+    from PySide6 import QtCore
+except ImportError:
+    from PySide2 import QtCore
+
 _theme = ConfigParser(interpolation=None)
 with Path(__file__).with_name('dvr.ini').open(encoding='utf-8') as theme_file:
     _theme.read_file(theme_file)
 COLORS = {name: tuple(map(int, value.split(','))) for name, value in _theme['colors'].items()}
+
+INPUT = {}
+for name, value in _theme['input'].items():
+    if name.endswith('.keys'):
+        INPUT[name] = tuple(getattr(QtCore.Qt, 'Key_' + key.strip()) for key in value.split(','))
+    elif name.endswith('.key'):
+        INPUT[name] = getattr(QtCore.Qt, 'Key_' + value.strip())
+    elif name in ('selection.control', 'cut.exact'):
+        INPUT[name] = _theme.getboolean('input', name)
+    elif value in ('Any', 'Disabled'):
+        INPUT[name] = None
+    else:
+        modifiers = QtCore.Qt.NoModifier
+        for modifier in value.split('+'):
+            modifiers |= getattr(QtCore.Qt, modifier.strip())
+        INPUT[name] = modifiers
 
 VIEW_STYLESHEET = """
 QMainWindow {

@@ -12,27 +12,7 @@ from . import (
     ruler_widget,
     track_widgets,
 )
-
-
-# Qt ControlModifier is Command on macOS; AltModifier is Option.
-# Keep the original bindings and assign additions to unused key combinations.
-INPUT = {
-    'selection.control': False,
-    'frame.keys': (QtCore.Qt.Key_Up, QtCore.Qt.Key_Down),
-    'frame.modifier': QtCore.Qt.ControlModifier,
-    'second.modifier': QtCore.Qt.ControlModifier | QtCore.Qt.ShiftModifier,
-    'cut.keys': (QtCore.Qt.Key_Left, QtCore.Qt.Key_Right),
-    'cut.modifier': QtCore.Qt.ControlModifier,
-    'cut.exact': False,
-    'marker.keys': (QtCore.Qt.Key_Up, QtCore.Qt.Key_Down),
-    'marker.modifier': QtCore.Qt.ControlModifier | QtCore.Qt.AltModifier,
-    'fit.key': QtCore.Qt.Key_F,
-    'fit.modifier': QtCore.Qt.ControlModifier,
-    'pan.modifier': QtCore.Qt.AltModifier,
-    'wheel.height': QtCore.Qt.ControlModifier | QtCore.Qt.ShiftModifier,
-    'wheel.zoom': None,
-    'wheel.scroll': QtCore.Qt.ControlModifier,
-}
+from .settings import INPUT
 
 
 KEY_SYM = {
