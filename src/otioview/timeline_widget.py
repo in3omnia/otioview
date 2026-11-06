@@ -739,8 +739,9 @@ class CompositionView(QtWidgets.QGraphicsView):
 
     def _get_new_item(self, key_event, curSelectedItem):
         key = key_event.key()
-        modifier = key_event.modifiers()
-        if not (key in (
+        modifier = key_event.modifiers() & ~QtCore.Qt.KeypadModifier
+        plain_enter = key in (QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter) and modifier == QtCore.Qt.NoModifier
+        if not plain_enter and not (key in (
                 QtCore.Qt.Key_Left,
                 QtCore.Qt.Key_Right,
                 QtCore.Qt.Key_Up,
