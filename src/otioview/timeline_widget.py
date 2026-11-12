@@ -30,7 +30,7 @@ INPUT = {
     'fit.modifier': QtCore.Qt.ControlModifier,
     'pan.modifier': QtCore.Qt.AltModifier,
     'wheel.height': QtCore.Qt.ShiftModifier,
-    'wheel.zoom': None,
+    'wheel.zoom': QtCore.Qt.AltModifier,
     'wheel.scroll': QtCore.Qt.ControlModifier,
 }
 
